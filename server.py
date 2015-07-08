@@ -11,12 +11,22 @@ class Server():
 	def main(self):
 		while True:
 			recv_data, addr = self.sockfd.recvfrom(1024)
-			if(recv_data.decode('utf-8') == 'ready'):
+			recv_data = recv_data.decode('utf-8')
+
+			if recv_data == 'ready':
 				self.addr_list.append(addr)
 				send_data = str(addr)
 				self.sockfd.sendto(send_data.encode('utf-8'), addr)
-			if(recv_data.decode('utf-8') == 'close'):
-				self.addr_list.remove(addr)
+
+			if recv_data == 'request' and len(self.addr_list) > 1:
+				n = self.addr_list.index(addr)
+				addr = addr_list[1-n]
+				send_data = str(addr)
+				self.sockfd.sendto(send_data.encode('utf-8'), addr)
+
+			if recv_data == 'request' and len(self.addr_list) <= 1:
+				send_data = 'none'
+				self.sockfd.sendto(send_data.encode('utf-8'), addr)
 
 if __name__ == '__main__':
 	s = Server()

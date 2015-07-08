@@ -13,6 +13,7 @@ class Client():
 
 	def addr_convert(self, s):
 
+		print(s)
 		re_addr = re.compile(r'\(\'(.*)\',\s(.*)\)')
 		t = re_addr.match(s).groups()
 		s1 = t[0]
@@ -21,20 +22,24 @@ class Client():
 
 	def start(self):
 
-		data = 'ready'
-		self.sockfd.sendto(data.encode('utf-8'), server_addr)
+		while True:
+			data = 'ready'
+			self.sockfd.sendto(data.encode('utf-8'), server_addr)
 
-		data, addr = self.sockfd.recvfrom(1024)
-		data = data.decode('utf-8')
-		self.self_addr = self.addr_convert(data)
+			data, addr = self.sockfd.recvfrom(1024)
+			data = data.decode('utf-8')
+			if addr == server_addr:
+				self.self_addr = self.addr_convert(data)
+				break
 		
 	def request(self):
+
 		while True:
 			data = 'request'
 			self.sockfd.sendto(data.encode('utf-8'), server_addr)
 			data, addr = self.sockfd.recvfrom(1024)
 			data = data.decode('utf-8')
-			if data != 'none':
+			if data != 'none' and addr == server_addr:
 				self.other_addr = self.addr_convert(data)
 				break
 
@@ -46,14 +51,15 @@ class Client():
 			self.sockfd.sendto(data.encode('utf-8'), self.other_addr)
 			data, addr = self.sockfd.recvfrom(1024)
 			data = data.decode('utf-8')
-			if data == 'ok':
-				m = 1
-			if data == 'init':
-				data = 'ok'
-				self.sockfd.sendto(data.encode('utf-8'), self.other_addr)
-				n = 1
-			if m + n == 1:
-				return True
+			if addr == self.other_addr:
+				if data == 'ok':
+					m = 1
+				if data == 'init':
+					data = 'ok'
+					self.sockfd.sendto(data.encode('utf-8'), self.other_addr)
+					n = 1
+				if m + n == 1:
+					return True
 
 	def chat(self):
 

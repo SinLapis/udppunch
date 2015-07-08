@@ -20,8 +20,8 @@ class Server():
 
 			if recv_data == 'request' and len(self.addr_list) > 1:
 				n = self.addr_list.index(addr)
-				addr = addr_list[1-n]
-				send_data = str(addr)
+				target_addr = self.addr_list[1-n]
+				send_data = str(target_addr)
 				self.sockfd.sendto(send_data.encode('utf-8'), addr)
 
 			if recv_data == 'request' and len(self.addr_list) <= 1:

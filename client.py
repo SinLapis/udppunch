@@ -1,7 +1,7 @@
 #-*- coding:utf-8 -*-
-import threading, socket, re
+import threading, socket, re, time
 
-server_addr = ('127.0.0.1', 9999)
+server_addr = ('54.169.131.175', 9999)
 
 class Client():
 
@@ -13,12 +13,19 @@ class Client():
 
 	def addr_convert(self, s):
 
-		print(s)
 		re_addr = re.compile(r'\(\'(.*)\',\s(.*)\)')
 		t = re_addr.match(s).groups()
-		s1 = t[0]
-		s2 = int(t[1])
-		return s1, s2
+		ip = t[0]
+		port = int(t[1])
+		return ip, port
+
+	def msg_convert(self, s):
+
+		re_msg = re.compile(r'addr:(.*)msg:(.*)')
+		t = re_msg.match(s).groups()
+		addr = t[0]
+		msg = t[1]
+		return addr, msg
 
 	def start(self):
 
@@ -45,21 +52,23 @@ class Client():
 
 	def init(self):
 
-		m = n = 0
-		while True:
+		n = 0
+		while n > 10:
 			data = 'init'
+			print('init')
 			self.sockfd.sendto(data.encode('utf-8'), self.other_addr)
 			data, addr = self.sockfd.recvfrom(1024)
 			data = data.decode('utf-8')
 			if addr == self.other_addr:
 				if data == 'ok':
-					m = 1
+					data = 'ok'
+					self.sockfd.sendto(data.encode('utf-8'), self.other_addr)
+					return True
 				if data == 'init':
 					data = 'ok'
 					self.sockfd.sendto(data.encode('utf-8'), self.other_addr)
-					n = 1
-				if m + n == 1:
-					return True
+			n += 1
+		return False
 
 	def chat(self):
 
@@ -75,19 +84,44 @@ class Client():
 				data, addr = sock.recvfrom(1024)
 				if addr == self.other_addr:
 					data = data.decode('utf-8')
-					print('Recevide from %s:%s' % addr)
 					print(data)
 
 		threading.Thread(target = send, args = (self.sockfd, )).start()
 		threading.Thread(target = recv, args = (self.sockfd, )).start()
 
+	def sy_chat(self):
+
+		def sy_send(sock):
+
+			while True:
+				data = 'addr:' + str(self.other_addr) + 'msg:' + input()
+				sock.sendto(data.encode('utf-8'), server_addr)
+
+		def sy_recv(sock):
+
+			while True:
+				data, addr = sock.recvfrom(1024)
+				data = data.decode('utf-8')
+				try:
+					addr, msg = self.msg_convert(data)
+					print('from:' + addr + '\n' + msg)
+				except Exception as e:
+					print('error')
+					pass
+
+		threading.Thread(target = sy_send, args = (self.sockfd, )).start()
+		threading.Thread(target = sy_recv, args = (self.sockfd, )).start()
 
 
 	def main(self):
 		self.start()
 		self.request()
-		self.init()
-		self.chat()
+		is_sy = self.init()
+		print(is_sy)
+		if is_sy == True:
+			self.chat()
+		else:
+			self.sy_chat()
 
 if __name__ == '__main__':
 

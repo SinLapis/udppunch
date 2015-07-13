@@ -2,7 +2,9 @@
 import threading, socket, re, time
 
 #服务器地址
-server_addr = ('127.0.0.1', 9999) 
+server_addr = ('52.74.196.113', 9999) 
+timeout = 20
+socket.setdefaulttimeout(timeout)
 
 class Client():
 
